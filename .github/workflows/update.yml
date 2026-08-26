@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
 
   schedule:
-    # GitHub Actions cron uses UTC.
     - cron: "0 */8 * * *"
 
 permissions:
@@ -16,16 +15,9 @@ jobs:
     timeout-minutes: 45
 
     env:
-      # Number of proxies tested in parallel.
       PROXY_TEST_CONCURRENCY: "64"
-
-      # Timeout for one proxy attempt.
       PROXY_TEST_TIMEOUT: "8"
-
-      # Additional retry count after the first attempt.
       PROXY_TEST_RETRIES: "1"
-
-      # The request MUST succeed through the proxy and return a valid IP.
       PROXY_TEST_URL: "https://api64.ipify.org?format=json"
 
     steps:
