@@ -4,8 +4,7 @@ on:
   workflow_dispatch:
 
   schedule:
-    # GitHub Actions uses UTC.
-    # Runs every 8 hours: 00:00, 08:00, 16:00 UTC.
+    # GitHub Actions cron uses UTC.
     - cron: "0 */8 * * *"
 
 permissions:
@@ -14,17 +13,34 @@ permissions:
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      # Number of proxies tested in parallel.
+      PROXY_TEST_CONCURRENCY: "64"
+
+      # Timeout for one proxy attempt.
+      PROXY_TEST_TIMEOUT: "8"
+
+      # Additional retry count after the first attempt.
+      PROXY_TEST_RETRIES: "1"
+
+      # The request MUST succeed through the proxy and return a valid IP.
+      PROXY_TEST_URL: "https://api64.ipify.org?format=json"
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
-      - name: Generate Resin subscription
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt
+
+      - name: Fetch and test proxies
         run: python build.py
 
       - name: Commit updated subscription
@@ -33,12 +49,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add dist/resin.txt
+          git add dist/resin.txt dist/stats.json
 
           if git diff --cached --quiet; then
             echo "No changes."
             exit 0
           fi
 
-          git commit -m "chore: update Resin subscription"
+          git commit -m "chore: update live Resin subscription"
           git push
